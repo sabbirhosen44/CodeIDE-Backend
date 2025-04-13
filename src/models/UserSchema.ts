@@ -3,8 +3,9 @@ import jwt, { SignOptions } from "jsonwebtoken";
 import config from "../config/default.js";
 import mongoose, { Schema } from "mongoose";
 import type { IUser } from "../types/index.js";
+import crypto from "crypto";
 
-const UserSchema: Schema = new Schema({
+const UserSchema: Schema<IUser> = new Schema({
   name: {
     type: String,
     required: [true, "Please add a name"],
@@ -73,6 +74,38 @@ UserSchema.methods.getSignedJwtToken = function (): string {
   return jwt.sign({ id: this._id }, config.jwtSecret, {
     expiresIn: config.jwtExpire,
   } as SignOptions);
+};
+
+UserSchema.methods.matchPassword = async function (
+  enteredPassword: string
+): Promise<boolean> {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+UserSchema.methods.getResetPasswordToken = function (): string {
+  const resetToken = crypto.randomBytes(20).toString("hex");
+
+  this.resetPasswordToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
+  this.resetPasswordExpire = new Date(Date.now() + 10 * 60 * 1000);
+
+  return resetToken;
+};
+
+UserSchema.methods.getEmailVerificationToken = function (): string {
+  const verificationToken = crypto.randomBytes(20).toString("hex");
+
+  this.emailVerificationToken = crypto
+    .createHash("sha256")
+    .update(verificationToken)
+    .digest("hex");
+
+  this.emailVerificationExpire = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+  return verificationToken;
 };
 
 export default mongoose.model<IUser>("User", UserSchema);
