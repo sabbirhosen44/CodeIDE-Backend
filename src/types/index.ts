@@ -5,7 +5,14 @@ export interface Config {
   mongoURI: string;
   jwtSecret: string;
   jwtExpire: string;
-  corsOrigin: string;
+  clientUrl: string;
+  emailFrom: string;
+  smtpSettings: {
+    host: string;
+    port: number;
+    user: string;
+    pass: string;
+  };
 }
 
 export interface IUser extends Document {
