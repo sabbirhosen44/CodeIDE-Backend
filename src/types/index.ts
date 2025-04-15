@@ -6,7 +6,6 @@ export interface Config {
   jwtSecret: string;
   jwtExpire: string;
   clientUrl: string;
-  emailFrom: string;
   smtpSettings: {
     host: string;
     port: number;
