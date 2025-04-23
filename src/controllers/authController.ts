@@ -1,10 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import config from "../config/default.js";
 import User from "../models/UserSchema.js";
-import { sendVerificationEmail } from "../services/emails/emails.js";
+import {
+  sendPasswordResetEmail,
+  sendVerificationEmail,
+} from "../services/emails/emails.js";
 import { IUser } from "../types/index.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/errorResponse.js";
+import crypto from "crypto";
 
 export const register = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -77,8 +81,68 @@ export const logout = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     res.status(200).json({
       success: true,
-      data: {},
+      message: "",
     });
+  }
+);
+
+export const forgotPassword = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const { email } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user)
+      return next(new ErrorResponse("There is no user with that email", 404));
+
+    const resetToken = user.getResetPasswordToken();
+    console.log(resetToken);
+    await user.save({ validateBeforeSave: false });
+
+    const resetUrl = `${config.clientUrl}/reset-password/${resetToken}`;
+
+    try {
+      await sendPasswordResetEmail(user.email, resetUrl);
+      res
+        .status(200)
+        .json({ success: true, message: "Email sent successfully" });
+    } catch (error) {
+      console.log(error);
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpire = undefined;
+      await user.save({ validateBeforeSave: false });
+
+      return next(new ErrorResponse("Email could not be sent", 500));
+    }
+  }
+);
+
+export const resetPassword = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { password: enteredPassword } = req.body;
+    console.log(req.params);
+
+    const resetPasswordToken = crypto
+      .createHash("sha256")
+      .update(req.params.resettoken.trim())
+      .digest("hex");
+
+    console.log(resetPasswordToken);
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() },
+    });
+
+    if (!user) return next(new ErrorResponse("Invalid token", 400));
+
+    user.password = enteredPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
   }
 );
 
