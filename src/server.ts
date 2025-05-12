@@ -1,3 +1,4 @@
+import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import { connectDB } from "./config/dbConnect.js";
@@ -13,6 +14,9 @@ const app = express();
 
 // middleware setup
 app.use(express.json());
+
+// enable cors
+app.use(cors({ origin: config.clientUrl, credentials: true }));
 
 //Route setup
 app.use("/api/v1/auth", authRouter);

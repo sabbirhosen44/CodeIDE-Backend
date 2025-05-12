@@ -5,7 +5,7 @@ import {
   sendPasswordResetEmail,
   sendVerificationEmail,
 } from "../services/emails/emails.js";
-import { IUser } from "../types/index.js";
+import { IUser, RequestWithUser } from "../types/index.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/errorResponse.js";
 import crypto from "crypto";
@@ -118,7 +118,7 @@ export const forgotPassword = asyncHandler(
 );
 
 export const resetPassword = asyncHandler(
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const { password: enteredPassword } = req.body;
     console.log(req.params);
 
@@ -143,6 +143,21 @@ export const resetPassword = asyncHandler(
     await user.save();
 
     sendTokenResponse(user, 200, res);
+  }
+);
+
+export const getMe = asyncHandler(
+  async (
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    const user = await User.findById(req.user?._id);
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
   }
 );
 

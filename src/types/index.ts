@@ -1,4 +1,5 @@
 import { Document } from "mongoose";
+import type { Request as ExpressRequest } from "express";
 
 export interface Config {
   port: number;
@@ -34,4 +35,8 @@ export interface IUser extends Document {
   matchPassword(enteredPassword: string): Promise<boolean>;
   getResetPasswordToken(): string;
   getEmailVerificationToken(): string;
+}
+
+export interface RequestWithUser extends ExpressRequest {
+  user?: IUser;
 }
