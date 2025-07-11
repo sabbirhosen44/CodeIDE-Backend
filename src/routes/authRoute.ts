@@ -6,12 +6,14 @@ import {
   logout,
   register,
   resetPassword,
+  verifyEmail,
 } from "../controllers/authController.js";
 import { protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.post("/register", register);
+router.get("/verify-email/:verificationtoken", verifyEmail);
 router.post("/login", login);
 router.get("/logout", logout);
 router.post("/forgotpassword", forgotPassword);

@@ -32,6 +32,10 @@ export const register = asyncHandler(
       password,
     });
 
+    if (email === process.env.ADMIN_EMAIL) {
+      user.role === "admin";
+    }
+
     const verificationToken = user.getEmailVerificationToken();
     await user.save({ validateBeforeSave: false });
 
@@ -50,6 +54,31 @@ export const register = asyncHandler(
 
       return next(new ErrorResponse("Email could not be send", 500));
     }
+  }
+);
+
+export const verifyEmail = asyncHandler(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const emailVerificationToken = crypto
+      .createHash("sha256")
+      .update(req.params.verificationtoken)
+      .digest("hex");
+
+    const user = await User.findOne({
+      emailVerificationToken,
+      emailVerificationExpire: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return next(new ErrorResponse("Invalid token", 400));
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpire = undefined;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
   }
 );
 
