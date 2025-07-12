@@ -21,7 +21,6 @@ export const register = asyncHandler(
     }
 
     const existingUser = await User.findOne({ email });
-
     if (existingUser) {
       return next(new ErrorResponse("Email is already registered", 400));
     }
@@ -30,24 +29,25 @@ export const register = asyncHandler(
       name,
       email,
       password,
+      role: email === process.env.ADMIN_EMAIL ? "admin" : "user",
+      plan: "free",
+      isEmailVerified: false,
     });
 
-    if (email === process.env.ADMIN_EMAIL) {
-      user.role === "admin";
-    }
-
     const verificationToken = user.getEmailVerificationToken();
-    await user.save({ validateBeforeSave: false });
+    console.log("verification token: ", verificationToken);
 
     const verificationUrl = `${config.clientUrl}/verify-email/${verificationToken}`;
+    console.log("verification url : ", verificationUrl);
+
+    await user.save({ validateBeforeSave: false });
 
     try {
       await sendVerificationEmail(user.email, verificationUrl);
+      console.log("email sended!");
 
       sendTokenResponse(user, 201, res);
     } catch (error) {
-      console.log(error);
-
       user.emailVerificationToken = undefined;
       user.emailVerificationExpire = undefined;
       await user.save({ validateBeforeSave: false });
@@ -59,26 +59,31 @@ export const register = asyncHandler(
 
 export const verifyEmail = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    const emailVerificationToken = crypto
+    console.log("Email verification started");
+    console.log("Token received:", req.params.verificationToken);
+
+    const hashedToken = crypto
       .createHash("sha256")
-      .update(req.params.verificationtoken)
+      .update(req.params.verificationToken)
       .digest("hex");
 
     const user = await User.findOne({
-      emailVerificationToken,
+      emailVerificationToken: hashedToken,
       emailVerificationExpire: { $gt: Date.now() },
     });
 
+    console.log("user found : ", user);
+
     if (!user) {
-      return next(new ErrorResponse("Invalid token", 400));
+      return next(new ErrorResponse("Invalid or expired token", 400));
     }
 
     user.isEmailVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpire = undefined;
     await user.save();
 
     sendTokenResponse(user, 200, res);
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpire = undefined;
   }
 );
 
@@ -98,6 +103,12 @@ export const login = asyncHandler(
     const isMatch = await user.matchPassword(password);
 
     if (!isMatch) return next(new ErrorResponse("Invalid credentials", 401));
+
+    if (!user.isEmailVerified) {
+      return next(
+        new ErrorResponse("Please verify your email before logging in", 403)
+      );
+    }
 
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });

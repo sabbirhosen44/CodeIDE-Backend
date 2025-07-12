@@ -13,7 +13,7 @@ import { protect } from "../middleware/auth.js";
 const router = express.Router();
 
 router.post("/register", register);
-router.get("/verify-email/:verificationtoken", verifyEmail);
+router.get("/verify-email/:verificationToken", verifyEmail);
 router.post("/login", login);
 router.get("/logout", logout);
 router.post("/forgotpassword", forgotPassword);
