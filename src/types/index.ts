@@ -37,6 +37,51 @@ export interface IUser extends Document {
   getEmailVerificationToken(): string;
 }
 
+export interface ITemplateFile {
+  id: string;
+  name: string;
+  type: "file" | "folder";
+  parentId?: string;
+  content?: string;
+  isExpanded?: boolean;
+  children?: ITemplateFile[];
+}
+
+export interface ITemplate extends Document {
+  _id: string;
+  name: string;
+  description: string;
+  category:
+    | "Frontend"
+    | "Backend"
+    | "Full Stack"
+    | "Mobile"
+    | "Desktop"
+    | "Standalone"
+    | "Library"
+    | "Framework";
+  language:
+    | "JavaScript"
+    | "TypeScript"
+    | "Python"
+    | "Java"
+    | "C"
+    | "C++"
+    | "C#"
+    | "PHP"
+    | "Ruby"
+    | "Go"
+    | "Rust"
+    | "Swift"
+    | "Kotlin";
+  framework?: string | null;
+  tags: string[];
+  files: ITemplateFile[];
+  downloads: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export interface RequestWithUser extends ExpressRequest {
   user?: IUser;
 }

@@ -5,6 +5,7 @@ import { connectDB } from "./config/dbConnect.js";
 import config from "./config/default.js";
 import errorHandler from "./middleware/error.js";
 import authRouter from "./routes/authRoute.js";
+import templateRouter from "./routes/templateRoute.js";
 
 // Initialize environment variables
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(cors({ origin: config.clientUrl, credentials: true }));
 
 //Route setup
 app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/templates", templateRouter);
 
 //Error handling middleware
 app.use(errorHandler);
