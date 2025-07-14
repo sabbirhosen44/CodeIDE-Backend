@@ -82,6 +82,17 @@ export interface ITemplate extends Document {
   updatedAt: Date;
 }
 
+export interface IProject extends Document {
+  _id: string;
+  name: string;
+  description: string;
+  templateId: string;
+  files: ITemplateFile[];
+  owner: string;
+  lastModified: Date;
+  createdAt: Date;
+}
+
 export interface RequestWithUser extends ExpressRequest {
   user?: IUser;
 }

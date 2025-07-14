@@ -13,6 +13,7 @@ export const getTemplates = asyncHandler(
     const {
       category,
       language,
+      framework,
       tags,
       search,
       sort = "-createdAt",
@@ -24,6 +25,7 @@ export const getTemplates = asyncHandler(
 
     if (category) query.category = category;
     if (language) query.language = language;
+    if (framework && framework !== "none") query.framework = framework;
     if (tags) query.tags = { $in: (tags as string).split(",") };
     if (search) {
       query.$or = [
