@@ -32,7 +32,7 @@ const TemplateFileSchema: Schema = new Schema({
 const TemplateSchema: Schema = new Schema({
   name: {
     type: String,
-    require: true,
+    required: true,
     trim: true,
     maxlength: 100,
   },

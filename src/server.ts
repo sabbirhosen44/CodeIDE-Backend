@@ -7,6 +7,7 @@ import errorHandler from "./middleware/error.js";
 import authRouter from "./routes/authRoute.js";
 import projectRouter from "./routes/projectRoute.js";
 import templateRouter from "./routes/templateRoute.js";
+import snippetReducer from "./routes/snippetRoute.js";
 
 // Initialize environment variables
 dotenv.config();
@@ -24,6 +25,7 @@ app.use(cors({ origin: config.clientUrl, credentials: true }));
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/templates", templateRouter);
 app.use("/api/v1/projects", projectRouter);
+app.use("/api/v1/snippets", snippetReducer);
 
 //Error handling middleware
 app.use(errorHandler);

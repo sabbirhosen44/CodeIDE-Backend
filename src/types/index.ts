@@ -93,6 +93,26 @@ export interface IProject extends Document {
   createdAt: Date;
 }
 
+export interface ISnippet extends Document {
+  title: string;
+  description?: string;
+  code: string;
+  language: string;
+  tags?: string[];
+  owner: any;
+  viewCount?: number;
+  likeCount?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ISnippetComment extends Document {
+  snippet: any;
+  user: any;
+  content: string;
+  createdAt: string;
+}
+
 export interface RequestWithUser extends ExpressRequest {
   user?: IUser;
 }
