@@ -10,18 +10,17 @@ export const createSnippet = asyncHandler(
     res: Response,
     next: NextFunction
   ): Promise<void> => {
-    try {
-      req.body.owner = req.user?._id;
+    req.body.owner = req.user?._id;
 
-      const snippet = await Snippet.create(req.body);
+    const snippet = await Snippet.create(req.body);
 
-      res.status(201).json({
-        success: true,
-        data: snippet,
-      });
-    } catch (error: any) {
-      return next(new ErrorResponse("Error creating Snippet", 500));
-    }
+    if (!snippet)
+      return next(new ErrorResponse("Failed to create snippet", 500));
+
+    res.status(201).json({
+      success: true,
+      data: snippet,
+    });
   }
 );
 
@@ -30,7 +29,10 @@ export const getSnippets = asyncHandler(
     req: RequestWithUser,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {}
+  ): Promise<void> => {
+    const {} = req.query;
+    let query: any = {};
+  }
 );
 
 export const getSnippet = asyncHandler(
