@@ -113,6 +113,12 @@ export interface ISnippetComment extends Document {
   createdAt: string;
 }
 
+export interface ISnippetLike extends Document {
+  snippet: any;
+  user: any;
+  createdAt: Date;
+}
+
 export interface RequestWithUser extends ExpressRequest {
   user?: IUser;
 }
