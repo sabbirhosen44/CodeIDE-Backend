@@ -117,7 +117,7 @@ export const getSnippet = asyncHandler(
         snippet: snippetId,
         user: req.user._id,
       }).lean();
-      isLiked = !!isLiked;
+      isLiked = !!existingLike;
     }
 
     // increment view count
@@ -143,7 +143,43 @@ export const toggleLikeSnippet = asyncHandler(
     req: RequestWithUser,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {}
+  ): Promise<void> => {
+    const { id: snippetId } = req.params;
+
+    if (!snippetId) return next(new ErrorResponse("Snippet not found!", 404));
+
+    const existingLike = await SnippetLike.findOne({
+      snippet: req.params.id,
+      user: req.user?._id,
+    });
+
+    let isLiked = false;
+    let message = "";
+    if (existingLike) {
+      await SnippetLike.deleteOne({ _id: existingLike._id });
+      await Snippet.findByIdAndUpdate(snippetId, { $inc: { likeCount: -1 } });
+      isLiked = false;
+      message = "Snippet unliked successfully!";
+    } else {
+      await SnippetLike.create({ snippet: snippetId, user: req.user?._id });
+      await Snippet.findByIdAndUpdate(snippetId, { $inc: { likeCount: +1 } });
+      isLiked = true;
+      message = "Snippet liked successfully!";
+    }
+
+    const updatedSnippet =
+      await Snippet.findById(snippetId).select("likeCount");
+    const likeCount = updatedSnippet?.likeCount || 0;
+
+    res.status(200).json({
+      success: true,
+      message,
+      data: {
+        isLiked,
+        likeCount,
+      },
+    });
+  }
 );
 
 export const updateSnippet = asyncHandler(
@@ -151,7 +187,30 @@ export const updateSnippet = asyncHandler(
     req: RequestWithUser,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {}
+  ): Promise<void> => {
+    const { id: snippetId } = req.params;
+
+    let snippet = await Snippet.findById(snippetId);
+
+    if (!snippet) {
+      return next(
+        new ErrorResponse(`Snippet not found with id of ${req.params.id}`, 404)
+      );
+    }
+
+    if (snippet.owner.toString() !== req.user?.id.toString()) {
+      return next(
+        new ErrorResponse("User not authorized to update snippet", 403)
+      );
+    }
+
+    snippet = await Snippet.findByIdAndUpdate(snippetId, req.body, {
+      new: true,
+      runValidators: true,
+    }).populate("owner", "name email avater");
+
+    res.status(200).json({ success: true, data: snippet });
+  }
 );
 
 export const deleteSnippet = asyncHandler(
@@ -159,7 +218,40 @@ export const deleteSnippet = asyncHandler(
     req: RequestWithUser,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {}
+  ): Promise<void> => {
+    const { id: snippetId } = req.params;
+
+    let snippet = await Snippet.findById(snippetId);
+
+    if (!snippet) {
+      return next(
+        new ErrorResponse(`Snippet not found with id of ${snippetId}`, 404)
+      );
+    }
+
+    if (snippet.owner.toString() !== req.user?.id.toString()) {
+      return next(
+        new ErrorResponse("User not authorized to update snippet", 403)
+      );
+    }
+
+    // Delete all the comments and likes associated with the snippet
+    await SnippetComment.deleteMany({
+      snippet: snippetId,
+    });
+    await SnippetLike.deleteMany({
+      snippet: snippetId,
+    });
+
+    // Delete the snippet
+    await snippet.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      data: {},
+      message: "Snippet deleted successfully!",
+    });
+  }
 );
 
 export const getUserSnippets = asyncHandler(
@@ -167,7 +259,53 @@ export const getUserSnippets = asyncHandler(
     req: RequestWithUser,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {}
+  ): Promise<void> => {
+    if (!req.user?._id) {
+      return next(new ErrorResponse("User not authenticated!", 401));
+    }
+
+    const snippets = await Snippet.find({ owner: req.user?._id })
+      .populate("owner", "name email avater")
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const snippetIds = snippets.map((snippet) => snippet._id);
+
+    let commentCounts = [];
+    if (snippetIds.length > 0) {
+      commentCounts = await SnippetComment.aggregate([
+        { $match: { $in: { snippetIds } } },
+        { $group: { _id: "$snippet", count: { $sum: 1 } } },
+      ]);
+    }
+
+    const commentCountMap = new Map();
+    commentCounts.forEach((item) =>
+      commentCountMap.set(item._id.toString(), item.count)
+    );
+
+    const snippetsWithCounts = snippets.map((snippet) => ({
+      ...snippet,
+      _id: snippet._id,
+      title: snippet.title,
+      description: snippet.description || "",
+      code: snippet.code || "",
+      language: snippet.language,
+      owner: snippet.owner,
+      viewCount: snippet.viewCount,
+      likeCount: snippet.likeCount,
+      createdAt: snippet.createdAt,
+      updatedAt: snippet.updatedAt,
+      comments: [],
+      commentCount: commentCountMap.get(snippet._id.toString()) || 0,
+    }));
+
+    res.status(200).json({
+      success: true,
+      totalSnippets: snippetsWithCounts.length,
+      data: snippetsWithCounts,
+    });
+  }
 );
 
 export const addComment = asyncHandler(
@@ -175,7 +313,34 @@ export const addComment = asyncHandler(
     req: RequestWithUser,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {}
+  ): Promise<void> => {
+    const { id: snippetId } = req.params;
+
+    if (!req.user?._id) {
+      return next(new ErrorResponse("User not authenticated!", 401));
+    }
+
+    const snippet = await Snippet.findById(snippetId);
+
+    if (!snippet) {
+      return next(
+        new ErrorResponse(`Snippet not found with id of ${req.params.id}`, 404)
+      );
+    }
+
+    const comment = await SnippetComment.create({
+      snippet: snippetId,
+      user: req.user?.id,
+      content: req.body.content,
+    });
+
+    await comment.populate("user", "name email avatar");
+
+    res.status(201).json({
+      success: true,
+      data: comment,
+    });
+  }
 );
 
 export const deleteComment = asyncHandler(
@@ -183,5 +348,26 @@ export const deleteComment = asyncHandler(
     req: RequestWithUser,
     res: Response,
     next: NextFunction
-  ): Promise<void> => {}
+  ): Promise<void> => {
+    const { id: snippetId } = req.params;
+
+    if (!req.user?._id) {
+      return next(new ErrorResponse("User not authenticated!", 401));
+    }
+
+    const comment = await SnippetComment.findById(snippetId);
+
+    if (!comment) {
+      return next(
+        new ErrorResponse(`Comment not found with id of ${req.params.id}`, 404)
+      );
+    }
+
+    await comment.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      data: {},
+    });
+  }
 );
