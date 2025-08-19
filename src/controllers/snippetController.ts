@@ -1,5 +1,5 @@
 import { NextFunction, Response } from "express";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import SnippetComment from "../models/SnippetCommentSchema.js";
 import Snippet from "../models/SnippetSchema.js";
 import { RequestWithUser } from "../types/index.js";
@@ -14,8 +14,10 @@ export const createSnippet = asyncHandler(
     next: NextFunction
   ): Promise<void> => {
     req.body.owner = req.user?._id;
+    console.log(req.body);
 
     const snippet = await Snippet.create(req.body);
+    console.log(snippet);
 
     if (!snippet)
       return next(new ErrorResponse("Failed to create snippet", 500));
@@ -46,23 +48,29 @@ export const getSnippets = asyncHandler(
       ];
     }
 
+    const total = await Snippet.countDocuments(query);
+
     const skip = (Number(page) - 1) * Number(limit);
 
     const snippets = await Snippet.find(query)
-      .populate("owner", "email name avater")
+      .populate("owner", "email name avaterUrl")
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
       .lean();
 
-    const total = await Snippet.countDocuments(query);
-
     // comment counts for each snippet
     const snippetIds = snippets.map((snippet) => snippet._id);
+
+    console.log(snippetIds);
+
+    // console.log(snippetIds);
     const commentCounts = await SnippetComment.aggregate([
-      { $match: { $in: { snippetIds } } },
+      { $match: { snippet: { $in: snippetIds } } },
       { $group: { _id: "$snippet", totalComment: { $sum: 1 } } },
     ]);
+
+    console.log(commentCounts);
 
     const commentCountMap = new Map();
     commentCounts.forEach((item) =>
@@ -75,6 +83,8 @@ export const getSnippets = asyncHandler(
       commentCount:
         commentCountMap.get((snippet._id as Types.ObjectId).toString()) || 0,
     }));
+
+    console.log(snippetsWithCounts);
 
     res.status(200).json({
       success: true,
