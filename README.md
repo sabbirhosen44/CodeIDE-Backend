@@ -1,10 +1,12 @@
 # CodeIDE Platform - Backend Documentation
 
+![CodeIDE Banner](./src/assets/CodeIde-Banner.png)
+
 ## Table of Contents
 
-1. [Introduction](#introduction)  
-2. [Project Architecture](#project-architecture)  
-3. [Install Guide](#install-guide)  
+1. [Introduction](#introduction)
+2. [Project Architecture](#project-architecture)
+3. [Install Guide](#install-guide)
 4. [Service Architecture](#service-architecture)
 
 ---
@@ -27,18 +29,19 @@ The backend system is designed to provide the following:
 
 ### Key Features
 
-- User registration and authentication  
-- Project and file management    
-- Template-based project bootstrapping  
+- User registration and authentication
+- Project and file management
+- Template-based project bootstrapping
 - Admin management system
 
 ### Technology Stack
 
-- **Runtime**: Node.js  
-- **Framework**: Express.js  
-- **Database**: MongoDB  
-- **Authentication**: JWT  
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB
+- **Authentication**: JWT
 - **Language**: Typescript
+
 ---
 
 ## Project Architecture
@@ -49,9 +52,9 @@ The CodeIDE backend is structured around microservices that handle domain-specif
 
 ### Services Implemented
 
-- **Authentication Service**  
-- **Project Service**  
-- **Template Service**  
+- **Authentication Service**
+- **Project Service**
+- **Template Service**
 - **Admin Service**
 
 Each service is isolated for scalability and follows RESTful design principles.
@@ -62,8 +65,8 @@ Each service is isolated for scalability and follows RESTful design principles.
 
 ### Prerequisites
 
-- Node.js (v16+ recommended)  
-- MongoDB (Local or MongoDB Atlas)  
+- Node.js (v16+ recommended)
+- MongoDB (Local or MongoDB Atlas)
 - npm or Yarn
 
 ### Setup Instructions
@@ -133,11 +136,13 @@ The backend server will run at `http://localhost:5000`
 Handles all user authentication workflows.
 
 **Responsibilities**:
+
 - User signup, login
 - Token generation and validation
 - Email verification
 
 **Technologies**:
+
 - JWT
 - Bcrypt
 - Nodemailer
@@ -149,6 +154,7 @@ Handles all user authentication workflows.
 Controls project lifecycle and access management.
 
 **Responsibilities**:
+
 - Project CRUD operations
 - Project metadata
 
@@ -159,6 +165,7 @@ Controls project lifecycle and access management.
 Provides bootstrapping options via code templates.
 
 **Responsibilities**:
+
 - Fetch template metadata
 - Retrieve template files
 - Create template for language
@@ -171,6 +178,7 @@ Provides bootstrapping options via code templates.
 Handles privileged operations available only to admins.
 
 **Responsibilities**:
+
 - View/manage users
 - Manage templates
 - Monitor activity
@@ -190,4 +198,3 @@ This project is licensed under the MIT License.
 ## Maintainer
 
 Developed by **Md. Sabbir Hosen**.
-
