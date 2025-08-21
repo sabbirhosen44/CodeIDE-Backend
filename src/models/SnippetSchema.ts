@@ -1,5 +1,6 @@
 import mongoose, { Schema } from "mongoose";
 import type { ISnippet } from "../types/index.js";
+import { LANGUAGES } from "../constants/languages.js";
 
 export const SnippetSchema: Schema = new Schema({
   title: {
@@ -18,23 +19,8 @@ export const SnippetSchema: Schema = new Schema({
   },
   language: {
     type: String,
-    enum: [
-      "javascript",
-      "typescript",
-      "python",
-      "java",
-      "c",
-      "c++",
-      "cpp",
-      "c#",
-      "php",
-      "ruby",
-      "go",
-      "rust",
-      "swift",
-      "kotlin",
-    ],
-    default: "javascript",
+    enum: LANGUAGES,
+    default: "Javascript",
   },
   tags: [String],
   owner: {

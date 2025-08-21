@@ -1,5 +1,8 @@
 import mongoose, { Schema } from "mongoose";
 import type { ITemplate } from "../types/index.js";
+import { FRAMEWORKS } from "../constants/frameworks.js";
+import { LANGUAGES } from "../constants/languages.js";
+import { PROJECT_TYPES } from "../constants/projectTypes.js";
 
 const TemplateFileSchema: Schema = new Schema({
   id: {
@@ -43,52 +46,18 @@ const TemplateSchema: Schema = new Schema({
   },
   category: {
     type: String,
-    enum: [
-      "Frontend",
-      "Backend",
-      "Full Stack",
-      "Mobile",
-      "Desktop",
-      "Standalone",
-      "Library",
-      "Framework",
-    ],
+    enum: PROJECT_TYPES,
     required: true,
   },
   language: {
     type: String,
-    enum: [
-      "JavaScript",
-      "TypeScript",
-      "Python",
-      "Java",
-      "C",
-      "C++",
-      "C#",
-      "PHP",
-      "Ruby",
-      "Go",
-      "Rust",
-      "Swift",
-      "Kotlin",
-      "Other",
-    ],
+    enum: LANGUAGES,
     required: true,
     default: "JavaScript",
   },
   framework: {
     type: String,
-    enum: [
-      "React",
-      "Next.js",
-      "Vue",
-      "Angular",
-      "Express",
-      "Django",
-      "Spring",
-      "Laravel",
-      null,
-    ],
+    enum: FRAMEWORKS,
     default: null,
   },
   tags: [{ type: String, lowercase: true, trim: true }],

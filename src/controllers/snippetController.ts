@@ -1,11 +1,12 @@
 import { NextFunction, Response } from "express";
-import mongoose, { Types } from "mongoose";
+import { Types } from "mongoose";
+import { LANGUAGES_MAP } from "../constants/languages.js";
 import SnippetComment from "../models/SnippetCommentSchema.js";
+import SnippetLike from "../models/SnippetLikeSchema.js";
 import Snippet from "../models/SnippetSchema.js";
 import { RequestWithUser } from "../types/index.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/errorResponse.js";
-import SnippetLike from "../models/SnippetLikeSchema.js";
 
 export const createSnippet = asyncHandler(
   async (
@@ -15,6 +16,11 @@ export const createSnippet = asyncHandler(
   ): Promise<void> => {
     req.body.owner = req.user?._id;
     console.log(req.body);
+
+    const inputLanguage = req.body.language?.toLowerCase();
+    if (LANGUAGES_MAP[inputLanguage]) {
+      req.body.language = LANGUAGES_MAP[inputLanguage];
+    }
 
     const snippet = await Snippet.create(req.body);
     console.log(snippet);
@@ -47,6 +53,8 @@ export const getSnippets = asyncHandler(
         { code: { $regex: search, $options: "i" } },
       ];
     }
+
+    console.log("Query:", query);
 
     const total = await Snippet.countDocuments(query);
 
