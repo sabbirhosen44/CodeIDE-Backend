@@ -1,6 +1,6 @@
 # CodeIDE Platform - Backend Documentation
 
-![CodeIDE Banner](./src/assets/CodeIde-Banner.png)
+![CodeIDE Banner](./src/assets/CodeIde%20Banner.png)
 
 ## Table of Contents
 
