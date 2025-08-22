@@ -41,16 +41,23 @@ export const getSnippets = asyncHandler(
     res: Response,
     next: NextFunction
   ): Promise<void> => {
-    const { language, tags, search, page = 1, limit = 10 } = req.query;
+    const {
+      language,
+      search,
+      sort = "recent",
+      page = 1,
+      limit = 10,
+    } = req.query;
     let query: any = {};
 
     if (language) query.language = language;
-    if (tags) query.tags = { $in: (tags as string).split(",") };
+
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
         { code: { $regex: search, $options: "i" } },
+        { tags: { $regex: search, $options: "i" } },
       ];
     }
 
@@ -60,9 +67,14 @@ export const getSnippets = asyncHandler(
 
     const skip = (Number(page) - 1) * Number(limit);
 
+    let sortOption: any = { createdAt: -1 };
+    if (sort === "likes") {
+      sortOption = { likeCount: -1 };
+    }
+
     const snippets = await Snippet.find(query)
       .populate("owner", "email name avaterUrl")
-      .sort({ createdAt: -1 })
+      .sort(sortOption)
       .skip(skip)
       .limit(Number(limit))
       .lean();
@@ -93,6 +105,10 @@ export const getSnippets = asyncHandler(
     }));
 
     console.log(snippetsWithCounts);
+
+    if (sort === "comments") {
+      snippetsWithCounts.sort((a, b) => b.commentCount - a.commentCount);
+    }
 
     res.status(200).json({
       success: true,
