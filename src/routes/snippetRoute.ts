@@ -10,12 +10,12 @@ import {
   toggleLikeSnippet,
   updateSnippet,
 } from "../controllers/snippetController.js";
-import { protect } from "../middleware/auth.js";
+import { optionalAuth, protect } from "../middleware/auth.js";
 
 const router = express.Router();
 
 router.get("/", getSnippets);
-router.get("/:id", getSnippet);
+router.get("/:id", optionalAuth, getSnippet);
 
 router.use(protect);
 

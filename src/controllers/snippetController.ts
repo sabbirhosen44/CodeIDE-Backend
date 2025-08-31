@@ -209,6 +209,7 @@ export const toggleLikeSnippet = asyncHandler(
       success: true,
       message,
       data: {
+        snippetId,
         isLiked,
         likeCount,
       },

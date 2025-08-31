@@ -40,6 +40,30 @@ export const protect = asyncHandler(
   }
 );
 
+export const optionalAuth = asyncHandler(
+  async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    let token: string | undefined;
+
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
+
+      try {
+        const decoded = jwt.verify(token, config.jwtSecret) as JwtPayload;
+
+        const user = await User.findById(decoded.id);
+
+        req.user = user || undefined;
+        next();
+      } catch (error) {
+        req.user = undefined;
+      }
+    }
+  }
+);
+
 export const authorize = (...roles: string[]) => {
   return (req: RequestWithUser, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
