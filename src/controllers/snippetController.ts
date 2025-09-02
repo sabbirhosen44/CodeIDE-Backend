@@ -1,4 +1,4 @@
-import { NextFunction, Response } from "express";
+import { NextFunction, response, Response } from "express";
 import { Types } from "mongoose";
 import { LANGUAGES_MAP } from "../constants/languages.js";
 import SnippetComment from "../models/SnippetCommentSchema.js";
@@ -139,8 +139,8 @@ export const getSnippet = asyncHandler(
       );
     }
 
-    const comments = await SnippetComment.findById(snippetId)
-      .populate("owner", "name email avater")
+    const comments = await SnippetComment.find({ snippet: snippetId })
+      .populate("user", "name email avater")
       .sort({ createdAt: -1 })
       .lean();
 
