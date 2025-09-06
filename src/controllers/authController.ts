@@ -201,6 +201,71 @@ export const getMe = asyncHandler(
   }
 );
 
+export const updateProfile = asyncHandler(
+  async (
+    req: RequestWithUser,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    const { name, email } = req.body;
+
+    if (email && email !== req.user?.email) {
+      const existingUser = await User.findOne({ email, _id: req.user?._id });
+      if (existingUser) {
+        return next(new ErrorResponse("Email is already taken", 400));
+      }
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user?._id,
+      { name, email },
+      { new: true, runValidators: true }
+    ).select("-password");
+
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: user,
+    });
+  }
+);
+
+export const changePassword = asyncHandler(
+  async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    const { password: newPassword } = req.body;
+
+    const user = await User.findById(req.user?._id);
+
+    if (!user) return next(new ErrorResponse("User not found.", 404));
+
+    user.password = newPassword;
+    await user.save();
+
+    res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  }
+);
+
+export const deleteAccount = asyncHandler(
+  async (req: RequestWithUser, res: Response, next: NextFunction) => {
+    const user = await User.findById(req.user?._id);
+
+    if (!user) {
+      return next(new ErrorResponse("User not found", 404));
+    }
+
+    await User.findByIdAndDelete(req.user?._id);
+
+    res
+      .status(200)
+      .json({ success: true, message: "User account deleted successfuly" });
+  }
+);
+
 const sendTokenResponse = (
   user: IUser,
   statusCode: number,
