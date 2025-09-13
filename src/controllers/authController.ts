@@ -9,6 +9,9 @@ import { IUser, RequestWithUser } from "../types/index.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/errorResponse.js";
 import crypto from "crypto";
+import { UploadedFile } from "express-fileupload";
+import { v2 as cloudinary } from "cloudinary";
+import fs from "fs";
 
 export const register = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -208,6 +211,32 @@ export const updateProfile = asyncHandler(
     next: NextFunction
   ): Promise<void> => {
     const { name, email } = req.body;
+    const profileImage = req.files?.profileImage as UploadedFile | undefined;
+
+    const updateProfileData: Record<string, any> = { name, email };
+
+    if (profileImage && !Array.isArray(profileImage)) {
+      if (!profileImage.mimetype.startsWith("image")) {
+        return next(new ErrorResponse("Please upload an image file", 400));
+      }
+
+      const maxSize = 1024 * 1024 * 3;
+      if (profileImage.size > maxSize) {
+        return next(
+          new ErrorResponse("Please upload an image smaller than 3MB", 400)
+        );
+      }
+
+      const result = await cloudinary.uploader.upload(
+        profileImage.tempFilePath,
+        {
+          folder: "user-avaters",
+          use_filename: true,
+        }
+      );
+      updateProfileData.avatarUrl = result.secure_url;
+      fs.unlinkSync(profileImage.tempFilePath);
+    }
 
     if (email && email !== req.user?.email) {
       const existingUser = await User.findOne({ email, _id: req.user?._id });
@@ -218,7 +247,7 @@ export const updateProfile = asyncHandler(
 
     const user = await User.findByIdAndUpdate(
       req.user?._id,
-      { name, email },
+      updateProfileData,
       { new: true, runValidators: true }
     ).select("-password");
 

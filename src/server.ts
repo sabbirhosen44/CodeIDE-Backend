@@ -8,6 +8,8 @@ import authRouter from "./routes/authRoute.js";
 import projectRouter from "./routes/projectRoute.js";
 import templateRouter from "./routes/templateRoute.js";
 import snippetReducer from "./routes/snippetRoute.js";
+import { v2 as cloudinary } from "cloudinary";
+import fileUpload from "express-fileupload";
 
 // Initialize environment variables
 dotenv.config();
@@ -17,9 +19,17 @@ const app = express();
 
 // middleware setup
 app.use(express.json());
+app.use(fileUpload({ useTempFiles: true }));
 
 // enable cors
 app.use(cors({ origin: config.clientUrl, credentials: true }));
+
+// cloudinary configuration
+cloudinary.config({
+  cloud_name: config.cloudinarySettings.cloudName,
+  api_key: config.cloudinarySettings.apiKey,
+  api_secret: config.cloudinarySettings.apiSecret,
+});
 
 //Route setup
 app.use("/api/v1/auth", authRouter);

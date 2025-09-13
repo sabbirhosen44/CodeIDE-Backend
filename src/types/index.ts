@@ -1,5 +1,6 @@
-import { Document } from "mongoose";
 import type { Request as ExpressRequest } from "express";
+import { FileArray } from "express-fileupload";
+import { Document } from "mongoose";
 
 export interface Config {
   port: number;
@@ -12,6 +13,11 @@ export interface Config {
     port: number;
     user: string;
     pass: string;
+  };
+  cloudinarySettings: {
+    cloudName: string;
+    apiKey: string;
+    apiSecret: string;
   };
 }
 
@@ -121,4 +127,5 @@ export interface ISnippetLike extends Document {
 
 export interface RequestWithUser extends ExpressRequest {
   user?: IUser;
+  files?: FileArray | null;
 }
