@@ -211,9 +211,12 @@ export const updateProfile = asyncHandler(
     next: NextFunction
   ): Promise<void> => {
     const { name, email } = req.body;
-    const profileImage = req.files?.profileImage as UploadedFile | undefined;
+    const profileImage = req.files?.imageFile as UploadedFile | undefined;
+    const updateProfileData: Record<string, any> = {};
 
-    const updateProfileData: Record<string, any> = { name, email };
+    if (name && name.trim() !== "") {
+      updateProfileData.name = name;
+    }
 
     if (profileImage && !Array.isArray(profileImage)) {
       if (!profileImage.mimetype.startsWith("image")) {
@@ -239,10 +242,14 @@ export const updateProfile = asyncHandler(
     }
 
     if (email && email !== req.user?.email) {
-      const existingUser = await User.findOne({ email, _id: req.user?._id });
+      const existingUser = await User.findOne({
+        email,
+        _id: { $ne: req.user?._id },
+      });
       if (existingUser) {
         return next(new ErrorResponse("Email is already taken", 400));
       }
+      updateProfileData.email = email;
     }
 
     const user = await User.findByIdAndUpdate(
@@ -250,7 +257,6 @@ export const updateProfile = asyncHandler(
       updateProfileData,
       { new: true, runValidators: true }
     ).select("-password");
-
     if (!user) {
       return next(new ErrorResponse("User not found", 404));
     }
