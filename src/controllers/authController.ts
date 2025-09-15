@@ -270,13 +270,21 @@ export const updateProfile = asyncHandler(
 
 export const changePassword = asyncHandler(
   async (req: RequestWithUser, res: Response, next: NextFunction) => {
-    const { password: newPassword } = req.body;
+    const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user?._id);
+    const user = await User.findById(req.user?._id).select("+password");
 
-    if (!user) return next(new ErrorResponse("User not found.", 404));
+    if (!user) {
+      return next(new ErrorResponse("User not found.", 404));
+    }
+
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return next(new ErrorResponse("Current password is not correct", 400));
+    }
 
     user.password = newPassword;
+    console.log("password updated!");
     await user.save();
 
     res
