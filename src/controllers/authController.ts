@@ -301,6 +301,19 @@ export const deleteAccount = asyncHandler(
       return next(new ErrorResponse("User not found", 404));
     }
 
+    if (user.avatarUrl) {
+      const publicIdMatch = user.avatarUrl.match(/\/([^\/]+)\.[a-zA-Z]+$/);
+
+      if (publicIdMatch) {
+        const publicId = `user-avaters/${publicIdMatch[1]}`;
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (error) {
+          console.error("Cloudinary delete error:", error);
+        }
+      }
+    }
+
     await User.findByIdAndDelete(req.user?._id);
 
     res
