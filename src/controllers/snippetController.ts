@@ -82,8 +82,6 @@ export const getSnippets = asyncHandler(
     // comment counts for each snippet
     const snippetIds = snippets.map((snippet) => snippet._id);
 
-    console.log(snippetIds);
-
     // console.log(snippetIds);
     const commentCounts = await SnippetComment.aggregate([
       { $match: { snippet: { $in: snippetIds } } },
@@ -201,8 +199,9 @@ export const toggleLikeSnippet = asyncHandler(
       message = "Snippet liked successfully!";
     }
 
-    const updatedSnippet =
-      await Snippet.findById(snippetId).select("likeCount");
+    const updatedSnippet = await Snippet.findById(snippetId).select(
+      "likeCount"
+    );
     const likeCount = updatedSnippet?.likeCount || 0;
 
     res.status(200).json({
@@ -309,7 +308,7 @@ export const getUserSnippets = asyncHandler(
     let commentCounts = [];
     if (snippetIds.length > 0) {
       commentCounts = await SnippetComment.aggregate([
-        { $match: { $in: { snippetIds } } },
+        { $match: { snippet: { $in: snippetIds } } },
         { $group: { _id: "$snippet", count: { $sum: 1 } } },
       ]);
     }

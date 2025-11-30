@@ -20,7 +20,7 @@ router.get("/:id", optionalAuth, getSnippet);
 router.use(protect);
 
 router.post("/", createSnippet);
-router.get("/user/:id", getUserSnippets);
+router.get("/user/me", getUserSnippets);
 router.put("/:id", updateSnippet);
 router.delete("/:id", deleteSnippet);
 router.post("/:id/like", toggleLikeSnippet);

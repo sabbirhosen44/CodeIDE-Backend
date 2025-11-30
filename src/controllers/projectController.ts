@@ -33,6 +33,8 @@ export const getUserProjects = asyncHandler(
 
     const query: any = { owner: req.user?._id };
 
+    console.log(query);
+
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },
@@ -45,6 +47,7 @@ export const getUserProjects = asyncHandler(
     const skip = (Number(page) - 1) * Number(limit);
 
     const projects = await Project.find(query)
+      .populate("templateId", "name description language")
       .sort(sort as string)
       .skip(skip)
       .limit(Number(limit));
