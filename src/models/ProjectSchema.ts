@@ -49,7 +49,7 @@ const ProjectSchema: Schema = new Schema({
     ref: "User",
     required: true,
   },
-  lastModifed: {
+  lastModified: {
     type: Date,
     default: Date.now,
   },
@@ -61,6 +61,11 @@ const ProjectSchema: Schema = new Schema({
 
 ProjectSchema.pre<IProject>("save", function (next) {
   this.lastModified = new Date();
+  next();
+});
+
+ProjectSchema.pre<IProject>("findOneAndUpdate", function (next) {
+  this.set({ lastModified: new Date() });
   next();
 });
 
