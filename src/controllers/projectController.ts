@@ -143,6 +143,10 @@ export const createProjectFromTemplate = asyncHandler(
 
       await project.populate("templateId", "name  language framework");
 
+      await Template.findByIdAndUpdate(templateId, {
+        $inc: { downloads: 1 },
+      });
+
       res.status(201).json({
         success: true,
         data: project,

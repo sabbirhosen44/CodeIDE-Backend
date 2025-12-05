@@ -151,7 +151,10 @@ const generateFileIds = (files: any[], templateName: string): any[] => {
       if (processedFile.type === "folder") {
         processedFile.id = `${templateSlug}-${processedFile.name}-${index}`;
       } else {
-        processedFile.id = `${templateSlug}-${processedFile.name.replace(/\./g, "-")}-${index}`;
+        processedFile.id = `${templateSlug}-${processedFile.name.replace(
+          /\./g,
+          "-"
+        )}-${index}`;
       }
     }
 

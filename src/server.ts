@@ -7,7 +7,9 @@ import errorHandler from "./middleware/error.js";
 import authRouter from "./routes/authRoute.js";
 import projectRouter from "./routes/projectRoute.js";
 import templateRouter from "./routes/templateRoute.js";
-import snippetReducer from "./routes/snippetRoute.js";
+import snippetRouter from "./routes/snippetRoute.js";
+import adminRouter from "./routes/adminRoute.js";
+import userRouter from "./routes/userRoute.js";
 import { v2 as cloudinary } from "cloudinary";
 import fileUpload from "express-fileupload";
 
@@ -35,7 +37,9 @@ cloudinary.config({
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/templates", templateRouter);
 app.use("/api/v1/projects", projectRouter);
-app.use("/api/v1/snippets", snippetReducer);
+app.use("/api/v1/snippets", snippetRouter);
+app.use("/api/v1/admin", adminRouter);
+app.use("/api/v1/users", userRouter);
 
 //Error handling middleware
 app.use(errorHandler);

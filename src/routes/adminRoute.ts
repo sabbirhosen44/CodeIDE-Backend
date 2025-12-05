@@ -8,3 +8,5 @@ router.use(protect);
 router.use(authorize("admin"));
 
 router.get("/stats", getAdminStats);
+
+export default router;
