@@ -1,5 +1,5 @@
 import express from "express";
-import { protect } from "../middleware/auth.js";
+import { authorize, protect } from "../middleware/auth.js";
 import {
   deleteUser,
   getUser,
@@ -11,6 +11,7 @@ import {
 const router = express.Router();
 
 router.use(protect);
+router.use(authorize("admin"));
 
 router.get("/", getUsers);
 router.get("/:id", getUser);
