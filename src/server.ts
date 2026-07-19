@@ -1,6 +1,7 @@
 import cors from "cors";
 import dotenv from "dotenv";
-import express from "express";
+import express, { Request, Response } from "express";
+import mongoose from "mongoose";
 import { connectDB } from "./config/dbConnect.js";
 import config from "./config/default.js";
 import errorHandler from "./middleware/error.js";
@@ -31,6 +32,17 @@ cloudinary.config({
   cloud_name: config.cloudinarySettings.cloudName,
   api_key: config.cloudinarySettings.apiKey,
   api_secret: config.cloudinarySettings.apiSecret,
+});
+
+// Health check route
+app.get("/health", (req: Request, res: Response) => {
+  const dbStatus = mongoose.connection.readyState === 1 ? "connected" : "disconnected";
+  res.status(200).json({
+    status: "ok",
+    dbStatus,
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+  });
 });
 
 //Route setup
