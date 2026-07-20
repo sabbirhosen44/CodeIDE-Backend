@@ -55,9 +55,11 @@ The CodeIDE backend is structured around microservices that handle domain-specif
 - **Authentication Service**
 - **Project Service**
 - **Template Service**
+- **Code Execution Service** (Custom Redis Queue engine executing 10+ languages)
 - **Admin Service**
 
 Each service is isolated for scalability and follows RESTful design principles.
+
 
 ---
 
@@ -74,8 +76,8 @@ Each service is isolated for scalability and follows RESTful design principles.
 1. **Clone the Repository**
 
 ```bash
-git clone https://github.com/your-username/codeide-backend.git
-cd codeide-backend
+git clone https://github.com/sabbirhosen44/CodeIDE-Backend.git
+cd CodeIDE-Backend
 ```
 
 2. **Install Dependencies**
@@ -109,6 +111,9 @@ SMTP_HOST=
 SMTP_PORT=
 SMTP_USER=
 SMTP_PASSWORD=
+
+# Code Execution Engine
+CODE_EXEC_URL=
 ```
 
 4. **Run the Development Server**
@@ -173,7 +178,21 @@ Provides bootstrapping options via code templates.
 
 ---
 
+### Code Execution Service
+
+Manages isolated, high-performance compilation and execution of user-submitted code snippets.
+
+**Responsibilities**:
+- Receives source code, standard input, language specification, and timeout settings.
+- Interfaces with the self-hosted execution engine daemon (`CodeIDE-code-execution`).
+- Manages execution tasks via a fast Redis-backed task queue.
+- Polls execution statuses and returns compiled stdout, stderr, compile messages, and exit codes.
+- Supports 10 languages: C++, C, Java, Python 3, JavaScript, Go, Rust, PHP, Ruby, and C#.
+
+---
+
 ### Admin Service
+
 
 Handles privileged operations available only to admins.
 
