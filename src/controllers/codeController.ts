@@ -2,129 +2,22 @@ import { Request, Response, NextFunction } from "express";
 import asyncHandler from "../utils/asyncHandler.js";
 import ErrorResponse from "../utils/errorResponse.js";
 
-const JUDGE0_LANGUAGE_IDS: Record<string, number> = {
-  javascript: 63,
-  typescript: 74,
-  python3: 71,
-  python: 71,
-  java: 62,
-  c: 50,
-  cpp: 54,
-  go: 60,
-  rust: 73,
-  php: 68,
-  ruby: 72,
-  csharp: 51,
+const GLOT_BASE_URL = "https://glot.io/api/run";
+
+const LANGUAGE_FILE_MAP: Record<string, { slug: string; filename: string }> = {
+  javascript: { slug: "javascript", filename: "main.js" },
+  typescript: { slug: "typescript", filename: "main.ts" },
+  python:     { slug: "python",     filename: "main.py" },
+  python3:    { slug: "python",     filename: "main.py" },
+  java:       { slug: "java",       filename: "Main.java" },
+  c:          { slug: "c",          filename: "main.c" },
+  cpp:        { slug: "cpp",        filename: "main.cpp" },
+  go:         { slug: "go",         filename: "main.go" },
+  rust:       { slug: "rust",       filename: "main.rs" },
+  php:        { slug: "php",        filename: "main.php" },
+  ruby:       { slug: "ruby",       filename: "main.rb" },
+  csharp:     { slug: "csharp",     filename: "main.cs" },
 };
-
-const JUDGE0_STATUS: Record<number, string> = {
-  1: "In Queue",
-  2: "Processing",
-  3: "Accepted",
-  4: "Wrong Answer",
-  5: "Time Limit Exceeded",
-  6: "Compilation Error",
-  7: "Runtime Error (SIGSEGV)",
-  8: "Runtime Error (SIGXFSZ)",
-  9: "Runtime Error (SIGFPE)",
-  10: "Runtime Error (SIGABRT)",
-  11: "Runtime Error (NZEC)",
-  12: "Runtime Error (Other)",
-  13: "Internal Error",
-  14: "Exec Format Error",
-};
-
-const JUDGE0_BASE_URL = "https://judge0-ce.p.rapidapi.com";
-const POLL_INTERVAL_MS = 1000;
-const MAX_POLL_ATTEMPTS = 15;
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function runOnJudge0(
-  languageId: number,
-  sourceCode: string,
-  stdin: string,
-  apiKey: string,
-  apiHost: string
-): Promise<{
-  stdout: string;
-  stderr: string;
-  compileOutput: string;
-  status: string;
-  statusId: number;
-  time: string;
-  memory: number;
-}> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-    "X-RapidAPI-Key": apiKey,
-    "X-RapidAPI-Host": apiHost,
-  };
-
-  const submitRes = await fetch(
-    `${JUDGE0_BASE_URL}/submissions?base64_encoded=false&wait=false`,
-    {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        language_id: languageId,
-        source_code: sourceCode,
-        stdin: stdin || "",
-      }),
-    }
-  );
-
-  if (!submitRes.ok) {
-    const errText = await submitRes.text();
-    throw new Error(`Judge0 submission failed (${submitRes.status}): ${errText}`);
-  }
-
-  const { token } = (await submitRes.json()) as { token: string };
-
-  if (!token) {
-    throw new Error("Judge0 did not return a submission token");
-  }
-
-  for (let attempt = 0; attempt < MAX_POLL_ATTEMPTS; attempt++) {
-    await sleep(POLL_INTERVAL_MS);
-
-    const pollRes = await fetch(
-      `${JUDGE0_BASE_URL}/submissions/${token}?base64_encoded=false`,
-      { method: "GET", headers }
-    );
-
-    if (!pollRes.ok) {
-      throw new Error(`Judge0 polling failed (${pollRes.status})`);
-    }
-
-    const result = (await pollRes.json()) as {
-      status: { id: number; description: string };
-      stdout?: string;
-      stderr?: string;
-      compile_output?: string;
-      time?: string;
-      memory?: number;
-    };
-
-    const statusId = result.status?.id;
-
-    if (statusId === 1 || statusId === 2) {
-      continue;
-    }
-
-    return {
-      stdout: result.stdout || "",
-      stderr: result.stderr || "",
-      compileOutput: result.compile_output || "",
-      status: result.status?.description || JUDGE0_STATUS[statusId] || "Unknown",
-      statusId,
-      time: result.time || "0",
-      memory: result.memory || 0,
-    };
-  }
-
-  throw new Error("Execution timed out waiting for Judge0 result");
-}
 
 export const executeCodeController = asyncHandler(
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -138,51 +31,78 @@ export const executeCodeController = asyncHandler(
     }
 
     const langKey = language.toLowerCase();
-    const languageId = JUDGE0_LANGUAGE_IDS[langKey];
+    const langConfig = LANGUAGE_FILE_MAP[langKey];
 
-    if (!languageId) {
+    if (!langConfig) {
       return next(
         new ErrorResponse(
-          `Language "${language}" is not supported. Supported: ${Object.keys(JUDGE0_LANGUAGE_IDS).join(", ")}`,
+          `Language "${language}" is not supported. Supported: ${Object.keys(LANGUAGE_FILE_MAP).join(", ")}`,
           400
         )
       );
     }
 
-    const apiKey = process.env.JUDGE0_API_KEY || "";
-    const apiHost = process.env.JUDGE0_API_HOST || "judge0-ce.p.rapidapi.com";
+    const apiToken = process.env.GLOT_API_TOKEN || "";
 
-    if (!apiKey) {
+    if (!apiToken) {
       return next(
         new ErrorResponse(
-          "Code execution is not configured. Please set JUDGE0_API_KEY in the server environment.",
+          "Code execution is not configured. Please set GLOT_API_TOKEN in the server environment.",
           503
         )
       );
     }
 
-    const result = await runOnJudge0(languageId, code, stdin, apiKey, apiHost);
+    const url = `${GLOT_BASE_URL}/${langConfig.slug}/latest`;
+    const startTime = Date.now();
 
-    const exitCode = result.statusId === 3 ? 0 : 1;
+    const glotRes = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Token ${apiToken}`,
+      },
+      body: JSON.stringify({
+        files: [{ name: langConfig.filename, content: code }],
+        stdin,
+        command: "",
+      }),
+    });
 
-    const errorText = [result.compileOutput, result.stderr]
-      .filter(Boolean)
-      .join("\n")
-      .trim();
+    if (!glotRes.ok) {
+      const errJson = await glotRes.json().catch(() => ({ message: "Unknown error" })) as { message?: string };
+      return next(
+        new ErrorResponse(
+          `Glot.io error (${glotRes.status}): ${errJson.message || "Unknown error"}`,
+          502
+        )
+      );
+    }
+
+    const result = (await glotRes.json()) as {
+      stdout?: string;
+      stderr?: string;
+      error?: string;
+    };
+
+    const executionTime = Date.now() - startTime;
+    const stdout = result.stdout || "";
+    const stderr = [result.stderr, result.error].filter(Boolean).join("\n").trim();
+    const exitCode = stderr ? 1 : 0;
 
     res.status(200).json({
       success: true,
       data: {
-        stdout: result.stdout,
-        stderr: errorText,
-        compileOutput: result.compileOutput,
-        status: result.status,
-        statusId: result.statusId,
+        stdout,
+        stderr,
+        compileOutput: "",
+        status: exitCode === 0 ? "Accepted" : "Runtime Error",
+        statusId: exitCode === 0 ? 3 : 11,
         exitCode,
-        executionTime: parseFloat(result.time) * 1000,
-        memory: result.memory,
+        executionTime,
+        memory: 0,
         language: langKey,
-        version: "Judge0 CE",
+        version: `glot.io/${langConfig.slug}`,
       },
     });
   }
