@@ -11,6 +11,7 @@ import templateRouter from "./routes/templateRoute.js";
 import snippetRouter from "./routes/snippetRoute.js";
 import adminRouter from "./routes/adminRoute.js";
 import userRouter from "./routes/userRoute.js";
+import codeRouter from "./routes/codeRoute.js";
 import { v2 as cloudinary } from "cloudinary";
 import fileUpload from "express-fileupload";
 
@@ -52,6 +53,7 @@ app.use("/api/v1/projects", projectRouter);
 app.use("/api/v1/snippets", snippetRouter);
 app.use("/api/v1/admin", adminRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/code", codeRouter);
 
 //Error handling middleware
 app.use(errorHandler);
